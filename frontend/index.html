@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Clipping System</title>
+    <link rel="stylesheet" href="/assets/app.css" />
+    <script src="/assets/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page-noise" aria-hidden="true"></div>
+    <div class="page-orb page-orb-one" aria-hidden="true"></div>
+    <div class="page-orb page-orb-two" aria-hidden="true"></div>
+
+    <main class="app-shell">
+      <header class="topbar reveal">
+        <div class="brand-lockup">
+          <p class="brand-kicker">AI CLIPPING SYSTEM</p>
+          <div class="brand-line">
+            <h1>Control Room</h1>
+            <span class="live-pill" id="connection-pill">Local worker online</span>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <a class="ghost-button" href="/docs" target="_blank" rel="noreferrer">API Docs</a>
+          <button class="ghost-button" id="refresh-dashboard" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <section class="hero-grid">
+        <article class="hero-card reveal">
+          <div class="hero-copy">
+            <p class="section-kicker">Autonomous edit pipeline</p>
+            <h2>Drop in a long-form video. Get vertical clips back.</h2>
+            <p class="hero-summary">
+              The backend downloads the source, extracts audio, transcribes speech locally, scores viral moments with Ollama,
+              cuts vertical clips with FFmpeg, then exports ready-to-review assets.
+            </p>
+          </div>
+
+          <div class="hero-ribbon">
+            <div class="hero-ribbon-track"></div>
+            <div class="hero-ribbon-track delayed"></div>
+            <div class="hero-ribbon-labels">
+              <span>Download</span>
+              <span>Transcribe</span>
+              <span>Detect</span>
+              <span>Render</span>
+            </div>
+          </div>
+        </article>
+
+        <aside class="hero-stats reveal" style="animation-delay: 0.05s">
+          <div class="stats-header">
+            <p class="section-kicker">System pulse</p>
+            <h2>Job telemetry</h2>
+          </div>
+
+          <div class="stats-grid" id="stats-grid">
+            <div class="stat-card">
+              <span class="stat-label">Queued</span>
+              <strong class="stat-value" id="stat-queued">0</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Running</span>
+              <strong class="stat-value" id="stat-running">0</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Completed</span>
+              <strong class="stat-value" id="stat-completed">0</strong>
+            </div>
+            <div class="stat-card">
+              <span class="stat-label">Failed</span>
+              <strong class="stat-value" id="stat-failed">0</strong>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <section class="dashboard-grid">
+        <div class="main-column">
+          <section class="panel input-panel reveal" style="animation-delay: 0.08s">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Ingest</p>
+                <h2>Queue a new source video</h2>
+              </div>
+            </div>
+
+            <form id="submit-form" class="submit-form">
+              <label class="field">
+                <span>YouTube URL</span>
+                <input
+                  id="video-url"
+                  name="url"
+                  type="url"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  required
+                />
+              </label>
+              <label class="field">
+                <span>Output ratio</span>
+                <select id="output-aspect-ratio" name="output_aspect_ratio">
+                  <option value="9:16">TikTok / Shorts / Reels (9:16)</option>
+                  <option value="16:9">YouTube Landscape (16:9)</option>
+                  <option value="1:1">Square (1:1)</option>
+                  <option value="4:5">Instagram Feed (4:5)</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>AI model</span>
+                <select id="ollama-model" name="ollama_model">
+                  <option value="llama3">llama3</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Caption vibe</span>
+                <select id="caption-theme" name="caption_theme">
+                  <option value="tiktok">TikTok punch</option>
+                  <option value="cinematic">Cinematic glow</option>
+                  <option value="motivational">Motivational energy</option>
+                </select>
+              </label>
+              <button class="primary-button" id="submit-button" type="submit">Start Processing</button>
+            </form>
+
+            <div class="feedback-strip" id="submit-feedback">Jobs are processed locally by the FastAPI worker queue.</div>
+          </section>
+
+          <section class="panel job-panel reveal" style="animation-delay: 0.12s">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Live job</p>
+                <h2>Pipeline activity</h2>
+              </div>
+              <form id="lookup-form" class="lookup-form">
+                <input id="job-id-input" name="job_id" type="text" placeholder="Load job by ID" required />
+                <button class="secondary-button" type="submit">Open</button>
+              </form>
+            </div>
+
+            <div class="job-stage-shell" id="current-job">
+              <div class="job-empty">
+                <span class="empty-icon">::</span>
+                <p>No active job selected. Submit a link or load a previous job.</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel clips-panel reveal" style="animation-delay: 0.16s">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Output</p>
+                <h2>Artifacts and clips</h2>
+              </div>
+            </div>
+
+            <div id="clips-grid" class="clips-grid empty-state">Clip exports and output files will appear here.</div>
+          </section>
+        </div>
+
+        <aside class="side-column">
+          <section class="panel recent-panel reveal" style="animation-delay: 0.1s">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Queue</p>
+                <h2>Recent jobs</h2>
+              </div>
+            </div>
+
+            <div id="recent-jobs" class="recent-jobs empty-state">No jobs yet.</div>
+          </section>
+
+          <section class="panel activity-panel reveal" style="animation-delay: 0.14s">
+            <div class="panel-header">
+              <div>
+                <p class="section-kicker">Trace</p>
+                <h2>Live pipeline logs</h2>
+              </div>
+            </div>
+
+            <div id="activity-feed" class="activity-feed empty-state">Select a job to see pipeline events.</div>
+          </section>
+        </aside>
+      </section>
+    </main>
+  </body>
+</html>
